@@ -1,8 +1,22 @@
-# Lynn3
+# Vermonte API Bot
 
-General purpose discord bot, mostly used for connecting to other APIs around the internet.
+General purpose discord bot, mostly used for connecting to APIs around the internet such as Minecraft, Classicube and many others.
 
-`This bot was made for my own server and I will not provide support for anything, but feel free read my ugly code`
+# API's currently supported by the bot:
+* Classicube
+* Minecraft
+* Twitch
+* Twitter
+* CS:GO            
+* IMDB            
+* Discord Invites (May merge into Discord API section)      
+* Mixer           
+* OSU             
+* Status API's (Currently not Mojang or Classicube)      
+* UrbanDictionary 
+* Discord User (May expand this soon)            
+* Weather         
+* Wynncraft       
 
 # Requirements:
 * Python 3.something
