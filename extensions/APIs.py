@@ -46,6 +46,7 @@ class APIs(commands.Cog):
         periods = [
             ("year",        60*60*24*365),
             ("month",       60*60*24*30),
+            ("week",        60*60*24*7),
             ("day",         60*60*24),
             ("hour",        60*60),
             ("minute",      60)
@@ -211,7 +212,7 @@ class APIs(commands.Cog):
 
 
     @commands.command(name="classicube", aliases=["cc"])
-    async def classiCubeAPI(self, ctx, *, user=None):
+    async def classiCubeAPI(self, ctx, *, user=None, server=None):
         """Gets information about ClassiCube, or searches players.
         user = ID or name
         Leave blank for general statistics"""
@@ -223,19 +224,36 @@ class APIs(commands.Cog):
                 if not data or data["error"] != "":
                     raise commands.CommandError(message="%User not found!")
 
-            flagName = {
-                "b": "Banned from forums",
-                "d": "Developer",
-                "m": "Forum Moderator",
-                "a": "Site/Forum Admin",
-                "e": "Blog Editor",
-                "p": "Patron",
-                "u": "Unverified Account",
-                "r": "Recovering Account"
-            }
-            flags = data["flags"]
+            flags = []
+            if "b" in data["flags"]:
+                flags.append("'b' - Banned from forums")
+            if "d" in data["flags"]:
+                flags.append("'d' - Developer")
+            if "m" in data["flags"]:
+                flags.append("'m' - Forum Moderator")
+            if "a" in data["flags"]:
+                flags.append("'a' - Site Admin")
+            if "e" in data["flags"]:
+                flags.append("'e' - Blog editor")
+            if "p" in data["flags"]:
+                flags.append("'p' - Patreon")
+            if "u" in data["flags"]:
+                flags.append("'u' - Unverified")
+            if "r" in data["flags"]:
+                flags.append("'r' - Recovering account")
 
-            embed = discord.Embed(title="ClassiCube User", colour=0x977dab)
+
+            if "a" in data["flags"] and data["id"] == 1:
+              embed = discord.Embed(title="Owner of Classicube", colour=0x977dab)   
+            if "a" in data["flags"]:
+              embed = discord.Embed(title="ClassiCube Admin", colour=0x977dab)   
+            if "p" in data["flags"]:
+            	embed = discord.Embed(title="ClassiCube Patron", colour=0x977dab)
+            if "u" in data["flags"]:
+            	embed = discord.Embed(title="Unverified ClassiCube User", colour=0x977dab)
+            else:
+              embed = discord.Embed(title="ClassiCube User", colour=0x977dab)
+              
             embed.set_author(name=data["username"],
                 icon_url="attachment://head.png")
             embed.add_field(name="ID", value=data["id"])
@@ -244,10 +262,7 @@ class APIs(commands.Cog):
                 ago = "Under a minute"
             embed.add_field(name="Account created", value="On " + datetime.utcfromtimestamp(data["registered"]).strftime("%c") + "\n" + ago + " ago")
             if flags:
-                embed.add_field(name="Notes", value=", ".join([flagName[n] for n in flags]))
-
-            if data["id"] == 1:
-                embed.add_field(name="Special Notes", value="Owner")
+                embed.add_field(name="Flags", value=", ".join(flags))
 
             if await self.REST("https://static.classicube.net/skins/" + str(data["username"]) + ".png", returns="r.status == 200"):
                 embed.add_field(name="Skin URL", value="[Click me](https://static.classicube.net/skins/" + str(data["username"]) + ".png)")
@@ -261,35 +276,91 @@ class APIs(commands.Cog):
                 file = discord.File("skins/2d/Steve_skin.png", filename="skin.png")
                 file2 = discord.File("skins/head/Steve_skin.png", filename="head.png")
 
+            if "a" in data["flags"]:
+                embed.add_field(name="'a'", value="This Account can access the Classicube Admin Panel")
+            if "d" in data["flags"]:
+                embed.add_field(name="'d'", value="This Account belongs to an Official Classicube Developer")
+            if "m" in data["flags"]:
+                embed.add_field(name="'m'", value="This Account can Moderate the Classicube Forum and view any post (including hidden posts)")
+            if "e" in data["flags"]:
+                embed.add_field(name="'e'", value="This Account has Classicube home page blog editing permissions")
+            if "p" in data["flags"]:
+                embed.add_field(name="'p'", value="This Account belongs to a player who supports Classicube")
+            if "b" in data["flags"]:
+                embed.add_field(name="'b'", value="This Account is banned from the forums thus it does not have access") 
+            if "r" in data["flags"]:
+                embed.add_field(name="'r'", value="This Account has a pending password recovery email request")
+            if "u" in data["flags"]:
+                embed.add_field(name="'u'", value="This Account hasn't been verified yet")
+            if data["id"] == 1:
+                embed.add_field(name="Special", value="This Account belongs to the Classicube Owner")
+
             embed.set_footer(text="\U00002063", icon_url="https://www.classicube.net/static/img/cc-cube-small.png")
             embed.set_image(url="attachment://skin.png")
             embed.timestamp = datetime.utcnow()
             await ctx.send(files=[file, file2], embed=embed)
+        
         else:
             data = await self.REST("https://www.classicube.net/api/players/")
             playercount = data["playercount"]
+            
+            onlinecount = 0
+            activemaxcount = 0 
+            inactivemaxcount = 0
+            maxcount = 0
+            servercount = 0
             players = ""
-            for p in data["lastfive"]:
-                players += str(p) + "\n"
 
             data = await self.REST("https://www.classicube.net/api/servers/")
+            servercount += len(data["servers"])
             serverlist = []
+            activeserverlist = []
             servers = ""
+            activeservers = len([s for s in data["servers"] if s["players"]])
+            inactiveservers = len([s for s in data["servers"] if not s["players"]])
+              
+                        
             for server in sorted(data["servers"], key=lambda k: k["players"], reverse=True):
+                
+                # Calculates all servers
+                if server["players"] >= 0:
+                    maxcount += server["maxplayers"]
+                
+                # Calculates inactive servers
+                if server["players"] == 0:
+                    inactivemaxcount += server["maxplayers"]
+                
+                # Calculates active servers
                 if server["players"] > 0:
-                    temp = "[" + str(server["country_abbr"]) + "] [" + str(server["name"]) + "](https://www.classicube.net/server/play/" + str(server["hash"]) + ") | " + str(server["players"]) + "/" + str(server["maxplayers"])
+                    temp = "[" + str(server["country_abbr"]) + "] [" + str(server["name"]) + "](https://www.classicube.net/server/play/" + str(server["hash"]) + ") | " + "Featured:" + str(server["featured"]) + " | " + str(server["players"]) + "/" + str(server["maxplayers"])
+                    onlinecount += server["players"]
+                    activemaxcount += server["maxplayers"]
+                    
                     if len(servers) + len("\n---\n") + len(temp) > 1024:
                         serverlist.append(servers)
-                        servers = ""
-                    servers += temp+"\n---\n"
-            serverlist.append(servers)
+                        servers = ""    
+                    servers += temp+"\n"
+                    
+            serverlist.append(servers)                                           	  
 
             embed = discord.Embed(title="ClassiCube", colour=0x977dab)
             embed.add_field(name="Total Accounts", value=playercount)
-            embed.add_field(name="Last five accounts", value=players)
+            
+            embed.add_field(name="Online Players", value=str(onlinecount))
+            embed.add_field(name="Active Servers", value= str(activeservers))
+            
+            embed.add_field(name="Active slots", value=str(activemaxcount))
+            embed.add_field(name="Inactive slots", value=str(inactivemaxcount))
+            embed.add_field(name="Inactive Servers", value= str(inactiveservers))
+            embed.add_field(name="Total Slots", value=str(maxcount))
+            embed.add_field(name="Total Servers", value=servercount)     
+            
+            
             for i in range(len(serverlist)):
                 embed.add_field(name=("("+str(i+1)+"/" + str(len(serverlist))+")" if len(serverlist) != 1 else "") + "Servers with players\nClick the server names to join!", value=serverlist[i])
 
+            embed.add_field(name="Stats: ", value="There are " + str(activeservers) + " out of " + str(servercount) + " servers active with " + str(inactiveservers) + " being inactive. " + str(onlinecount) + " slots are being used from a total of " + str(maxcount) + " available slots." + "The most popular server is " + str(serverlist[0].split("\n")[0]))         
+            
             embed.set_footer(text="\U00002063", icon_url="https://www.classicube.net/static/img/cc-cube-small.png")
             embed.timestamp = datetime.utcnow()
             await ctx.send(embed=embed)
@@ -513,7 +584,7 @@ class APIs(commands.Cog):
         await ctx.send(embed=embed)
 
 
-    @commands.command(name="invite", aliases=["discord"])
+    @commands.command(name="invite", aliases=["discordinv"])
     async def DiscordAPI(self, ctx, *, invite):
         """Gets information about discord invites"""
         invite = str(invite.split("/")[-1])
