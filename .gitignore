@@ -1,5 +1,6 @@
 __pycache__
 config.py
+config.py.bak
 juttu.py
 *.db
 logs
