@@ -108,6 +108,200 @@ class APIs(commands.Cog):
     # GAMES
     # ---
 
+    @commands.command(name="classicube", aliases=["cc"])
+    async def classiCubeAPI(self, ctx, *, user=None, server=None):
+        """Gets information about ClassiCube, or searches players.
+        user = ID or name
+        Leave blank for general statistics"""
+        if user:
+            data = await self.REST("https://www.classicube.net/api/player/"+self.escape(user))
+            if not data or data["error"] != "":
+                if user.isdigit():
+                    data = await self.REST("https://www.classicube.net/api/id/"+self.escape(user))
+                if not data or data["error"] != "":
+                    raise commands.CommandError(message="%User not found!")
+
+            flags = []
+            if "b" in data["flags"]:
+                flags.append("'b' - Banned from forums")
+            if "d" in data["flags"]:
+                flags.append("'d' - Developer")
+            if "m" in data["flags"]:
+                flags.append("'m' - Forum Moderator")
+            if "a" in data["flags"]:
+                flags.append("'a' - Site Admin")
+            if "e" in data["flags"]:
+                flags.append("'e' - Blog editor")
+            if "p" in data["flags"]:
+                flags.append("'p' - Patreon")
+            if "u" in data["flags"]:
+                flags.append("'u' - Unverified")
+            if "r" in data["flags"]:
+                flags.append("'r' - Recovering account")
+
+            if "a" in data["flags"] and data["id"] == 1:
+                embed = discord.Embed(title="Founder of Classicube", colour=0x7474A5)
+            if "a" in data["flags"]:
+                embed = discord.Embed(title="ClassiCube Admin", colour=0xFFD700)
+            elif "d" in data["flags"]:
+                embed = discord.Embed(title="Classicube Developer", colour=0xFFD700)
+            elif "m" in data["flags"]:
+                embed = discord.Embed(title="ClassiCube Moderator", colour=0xFFD700)
+            elif "p" in data["flags"]:
+                embed = discord.Embed(title="ClassiCube Supporter", colour=0xA6A6ED)
+            elif "b" in data["flags"]:
+                embed = discord.Embed(title="Banned User", colour=0xff0000)
+            elif "u" in data["flags"]:
+                embed = discord.Embed(title="Unverified ClassiCube Account", colour=0x808080)
+            else:
+                embed = discord.Embed(title="Regular ClassiCube User", colour=0xE6E6FA)
+            
+            if "a" in data["flags"] or "m" in data["flags"] or "d" in data["flags"]:
+                embed.set_author(name="[Staff] " + data["username"] + " - " + str(data["id"]), icon_url="attachment://head.png")
+            elif "p" in data["flags"]:
+                embed.set_author(name="[Supporter] " + data["username"] + " - " + str(data["id"]) , icon_url="attachment://head.png")
+            elif "b" in data["flags"]:
+                embed.set_author(name= data["username"] + " - " + str(data["id"]) + " | [Banned]", icon_url="attachment://head.png")
+            elif "r" in data["flags"]:
+                embed.set_author(name=data["username"] + " - " + str(data["id"]) + " | [Awaiting Password Reset]", icon_url="attachment://head.png")
+            elif "u" in data["flags"]:
+                embed.set_author(name=data["username"] + " - " + str(data["id"]) + " | [Unverified]", icon_url="attachment://head.png")
+            else:
+                embed.set_author(name=data["username"] + " - " + str(data["id"]), icon_url="attachment://head.png")          
+            
+            embed.set_thumbnail(url="https://www.classicube.net/face/" + str(data["username"]) + ".png")
+            embed.add_field(name="ID", value=data["id"])
+            
+            ago = self.td_format(datetime.utcnow() - datetime.utcfromtimestamp(data["registered"]))
+            if len(ago) == 0:
+                ago = "Under a minute"
+            embed.add_field(name="Account created", value="On " + datetime.utcfromtimestamp(data["registered"]).strftime("%c") + "\n" + ago + " ago")
+            if flags:
+                embed.add_field(name="Flags", value=", ".join(flags))
+
+            if await self.REST("https://static.classicube.net/skins/" + str(data["username"]) + ".png", returns="r.status == 200"):
+                embed.add_field(name="Skin URL", value="[Click me](https://static.classicube.net/skins/" + str(data["username"]) + ".png)")
+                await BotUtils.skinRenderer2D("https://static.classicube.net/skins/" + str(data["username"]) + ".png", fromFile=False)
+                await BotUtils.headRenderer("https://static.classicube.net/skins/" + str(data["username"]) + ".png", fromFile=False)
+                file = discord.File("skins/2d/" + str(data["username"]) + ".png", filename="skin.png")
+                file2 = discord.File("skins/head/" + str(data["username"]) + ".png", filename="head.png")
+            else:
+                await BotUtils.skinRenderer2D("https://gamepedia.cursecdn.com/minecraft_gamepedia/3/37/Steve_skin.png")
+                await BotUtils.headRenderer("https://gamepedia.cursecdn.com/minecraft_gamepedia/3/37/Steve_skin.png")
+                file = discord.File("skins/2d/Steve_skin.png", filename="skin.png")
+                file2 = discord.File("skins/head/Steve_skin.png", filename="head.png")
+
+            embed.add_field(name="Flag Descriptions: ", value="--------")
+
+            if "a" in data["flags"]:
+                embed.add_field(name="'a': ", value="This Account can access the Classicube Admin Panel")
+            if "d" in data["flags"]:
+                embed.add_field(name="'d': ", value="This Account belongs to an Official Classicube Developer")
+            if "m" in data["flags"]:
+                embed.add_field(name="'m': ", value="This Account can Moderate the Classicube Forum and view any post (including hidden posts)")
+            if "e" in data["flags"]:
+                embed.add_field(name="'e': ", value="This Account has Classicube home page blog editing permissions")
+            if "p" in data["flags"]:
+                embed.add_field(name="'p': ", value="This Account belongs to a player who supports Classicube")
+            if "b" in data["flags"]:
+                embed.add_field(name="'b': ", value="This Account is banned from the forums thus it does not have access") 
+            if "r" in data["flags"]:
+                embed.add_field(name="'r': ", value="This Account has a pending password recovery email request")
+            if "u" in data["flags"]:
+                embed.add_field(name="'u': ", value="This Account hasn't been verified yet")
+            if data["id"] == 1:
+                embed.add_field(name="Special Status: ", value="This Account belongs to the Classicube Owner")
+
+            embed.set_footer(text="\U00002063", icon_url="https://www.classicube.net/static/img/cc-cube-small.png")
+            embed.set_image(url="attachment://skin.png")
+            embed.timestamp = datetime.utcnow()
+            await ctx.send(files=[file, file2], embed=embed)
+ 
+        else:
+            data = await self.REST("https://www.classicube.net/api/players/")
+            playercount = data["playercount"]
+            
+            onlinecount = 0
+            activemaxcount = 0 
+            inactivemaxcount = 0
+            maxcount = 0
+            servercount = 0
+            players = ""
+
+            data = await self.REST("https://www.classicube.net/api/servers/")
+            servercount += len(data["servers"])
+            serverlist = []
+            activeserverlist = []
+            servers = ""
+            deadservers = len([s for s in data["servers"] if s["players"] == 0])
+            superquietservers = len([s for s in data["servers"] if s["players"] >= 1 and s["players"] < 3])
+            quietservers = len([s for s in data["servers"] if s["players"] >= 3 and s["players"] < 5])
+            typicalservers = len([s for s in data["servers"] if s["players"] >= 5 and s["players"] < 7])
+            busyservers = len([s for s in data["servers"] if s["players"] >= 7 and s["players"] < 10])
+            popularservers = len([s for s in data["servers"] if s["players"] >= 10 and s["players"] < 20])
+            superpopularservers = len([s for s in data["servers"] if s["players"] >= 20])
+            #servers = len([s for s in data["servers"] if s["players"] > 1])
+            
+            activeservers = len([s for s in data["servers"] if s["players"]])
+            inactiveservers = len([s for s in data["servers"] if not s["players"]])
+            activeserverlist = [s for s in data["servers"] if s["players"]]
+                        
+            for server in sorted(data["servers"], key=lambda k: k["players"], reverse=True):
+                
+                # Calculates all servers
+                if server["players"] >= 0:
+                    maxcount += server["maxplayers"]
+                
+                # Calculates inactive servers
+                if server["players"] == 0:
+                    inactivemaxcount += server["maxplayers"]
+                
+                # Calculates active servers
+                if server["players"] > 0:
+                    temp = "[" + str(server["country_abbr"]) + "] [" + str(server["name"]) + "](https://www.classicube.net/server/play/" + str(server["hash"]) + ") | " + "Featured: " + str(server["featured"]) + " | " + str(server["players"]) + "/" + str(server["maxplayers"])
+                    onlinecount += server["players"]
+                    activemaxcount += server["maxplayers"]
+                    
+                    if len(servers) + len("\n---\n") + len(temp) > 1024:
+                        serverlist.append(servers)
+                        servers = ""    
+                    servers += temp+"\n"
+                    
+            serverlist.append(servers)                                           	  
+
+            embed = discord.Embed(title="ClassiCube", colour=0x977dab)
+            embed.add_field(name="Total Accounts", value=playercount)
+            
+            embed.add_field(name="Online Players", value=str(onlinecount) + " player(s)")
+            
+            
+            embed.add_field(name="Dead Servers", value=str(deadservers) + " server(s)")
+            embed.add_field(name="Active Servers", value= str(activeservers) + " server(s)")
+            embed.add_field(name="Very Quiet Servers", value=str(superquietservers) + " server(s)")
+            embed.add_field(name="Quiet Servers", value=str(quietservers) + " server(s)")
+            embed.add_field(name="Typical Servers", value=str(typicalservers) + " server(s)")
+            embed.add_field(name="Busy Servers", value=str(busyservers) + " server(s)")
+            embed.add_field(name="Popular Servers", value=str(popularservers) + " server(s)")
+            embed.add_field(name="Super Popular Servers", value=str(superpopularservers) + " server(s)")
+            embed.add_field(name="Active slots", value=str(activemaxcount) + " slot(s)")
+            embed.add_field(name="Inactive Servers", value= str(inactiveservers) + " server(s)")
+            embed.add_field(name="Inactive slots", value=str(inactivemaxcount) + " slot(s)")
+            embed.add_field(name="Total Servers", value=str(servercount) + " server(s)")
+            embed.add_field(name="Total Slots", value=str(maxcount) + " slot(s)")
+                 
+            
+            
+            for i in range(len(serverlist)):
+                embed.add_field(name="Servers with players\nClick the server names to join!", value=serverlist[i])
+            
+            embed.add_field(name="Stats: ", value="There are " + str(activeservers) + " out of " + str(servercount) + " servers active with " + str(inactiveservers) + " being inactive. " + str(onlinecount) + " slots are being used from a total of " + str(maxcount) + " available slots." + "The most popular server is " + str(activeserverlist[0]) + " and the least popular server is " + str(activeserverlist[-1]))        
+            embed.add_field(name="Player Stats: ", value= str(onlinecount) + " players are currently online.")
+                        
+            embed.set_footer(text="\U00002063", icon_url="https://www.classicube.net/static/img/cc-cube-small.png")
+            embed.timestamp = datetime.utcnow()
+            await ctx.send(embed=embed)
+
+
     @commands.command(name="minecraft", aliases=["mc"])
     async def minecraftAPI(self, ctx, *, user=None):
         """Gets information about Minecraft, or searches players.
@@ -123,6 +317,7 @@ class APIs(commands.Cog):
                 names[i] = names[i].replace("*", "\\*").replace("_", "\\_").replace("~", "\\~")
             names.reverse()
             names[0] += " **[CURRENT]**"
+            names[-1] += " **[Original]**"
             created = await self.getMinecraftAge(user)
             skin = await self.getMinecraftSkinUrl(uuid["id"])
             if not skin:
@@ -130,6 +325,7 @@ class APIs(commands.Cog):
             embed = discord.Embed(title="Minecraft User", colour=0x82540f)
             embed.set_author(name=history[-1]["name"], icon_url="attachment://head.png")
             embed.add_field(name="Name history", value="\n".join(names))
+            embed.add_field(name="Name history stats", value="This account has had " + str(len(names) - 1) + " name changes since first registered")
             embed.add_field(name="UUID", value=uuid["id"])
             try:
                 skin["textures"]["SKIN"]["url"]
@@ -149,9 +345,10 @@ class APIs(commands.Cog):
             if created:
                 embed.add_field(name="Account created", value="On " + created.strftime("%c") + "\n" + self.td_format(datetime.utcnow() - created) + " ago")
             else:
-                embed.add_field(name="Account created", value="???")
+                embed.add_field(name="Account created", value="Account may be legacy")
             embed.set_footer(text="\U00002063", icon_url="https://minecraft.net/favicon-96x96.png")
             embed.set_image(url="attachment://skin.png")
+            embed.set_thumbnail(url="attachment://head.png")
             embed.timestamp = datetime.utcnow()
             await ctx.send(files=[skinFile, headFile], embed=embed)
         else:
@@ -162,6 +359,7 @@ class APIs(commands.Cog):
             embed.set_footer(text="\U00002063", icon_url="https://minecraft.net/favicon-96x96.png")
             embed.timestamp = datetime.utcnow()
             await ctx.send(embed=embed)
+
 
     @commands.command(name="csgo", aliases=["cs"])
     async def CSGOAPI(self, ctx, *, user):
@@ -209,161 +407,6 @@ class APIs(commands.Cog):
         embed.set_footer(text="Account created", icon_url="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Osu%21Logo_%282015%29.svg/480px-Osu%21Logo_%282015%29.svg.png")
         embed.timestamp = datetime.strptime(data["join_date"], "%Y-%m-%d %H:%M:%S")
         await ctx.send(embed=embed)
-
-
-    @commands.command(name="classicube", aliases=["cc"])
-    async def classiCubeAPI(self, ctx, *, user=None, server=None):
-        """Gets information about ClassiCube, or searches players.
-        user = ID or name
-        Leave blank for general statistics"""
-        if user:
-            data = await self.REST("https://www.classicube.net/api/player/"+self.escape(user))
-            if not data or data["error"] != "":
-                if user.isdigit():
-                    data = await self.REST("https://www.classicube.net/api/id/"+self.escape(user))
-                if not data or data["error"] != "":
-                    raise commands.CommandError(message="%User not found!")
-
-            flags = []
-            if "b" in data["flags"]:
-                flags.append("'b' - Banned from forums")
-            if "d" in data["flags"]:
-                flags.append("'d' - Developer")
-            if "m" in data["flags"]:
-                flags.append("'m' - Forum Moderator")
-            if "a" in data["flags"]:
-                flags.append("'a' - Site Admin")
-            if "e" in data["flags"]:
-                flags.append("'e' - Blog editor")
-            if "p" in data["flags"]:
-                flags.append("'p' - Patreon")
-            if "u" in data["flags"]:
-                flags.append("'u' - Unverified")
-            if "r" in data["flags"]:
-                flags.append("'r' - Recovering account")
-
-
-            if "a" in data["flags"] and data["id"] == 1:
-              embed = discord.Embed(title="Owner of Classicube", colour=0x977dab)   
-            if "a" in data["flags"]:
-              embed = discord.Embed(title="ClassiCube Admin", colour=0x977dab)   
-            if "p" in data["flags"]:
-            	embed = discord.Embed(title="ClassiCube Patron", colour=0x977dab)
-            if "u" in data["flags"]:
-            	embed = discord.Embed(title="Unverified ClassiCube User", colour=0x977dab)
-            else:
-              embed = discord.Embed(title="ClassiCube User", colour=0x977dab)
-              
-            embed.set_author(name=data["username"],
-                icon_url="attachment://head.png")
-            embed.add_field(name="ID", value=data["id"])
-            ago = self.td_format(datetime.utcnow() - datetime.utcfromtimestamp(data["registered"]))
-            if len(ago) == 0:
-                ago = "Under a minute"
-            embed.add_field(name="Account created", value="On " + datetime.utcfromtimestamp(data["registered"]).strftime("%c") + "\n" + ago + " ago")
-            if flags:
-                embed.add_field(name="Flags", value=", ".join(flags))
-
-            if await self.REST("https://static.classicube.net/skins/" + str(data["username"]) + ".png", returns="r.status == 200"):
-                embed.add_field(name="Skin URL", value="[Click me](https://static.classicube.net/skins/" + str(data["username"]) + ".png)")
-                await BotUtils.skinRenderer2D("https://static.classicube.net/skins/" + str(data["username"]) + ".png", fromFile=False)
-                await BotUtils.headRenderer("https://static.classicube.net/skins/" + str(data["username"]) + ".png", fromFile=False)
-                file = discord.File("skins/2d/" + str(data["username"]) + ".png", filename="skin.png")
-                file2 = discord.File("skins/head/" + str(data["username"]) + ".png", filename="head.png")
-            else:
-                await BotUtils.skinRenderer2D("https://gamepedia.cursecdn.com/minecraft_gamepedia/3/37/Steve_skin.png")
-                await BotUtils.headRenderer("https://gamepedia.cursecdn.com/minecraft_gamepedia/3/37/Steve_skin.png")
-                file = discord.File("skins/2d/Steve_skin.png", filename="skin.png")
-                file2 = discord.File("skins/head/Steve_skin.png", filename="head.png")
-
-            if "a" in data["flags"]:
-                embed.add_field(name="'a'", value="This Account can access the Classicube Admin Panel")
-            if "d" in data["flags"]:
-                embed.add_field(name="'d'", value="This Account belongs to an Official Classicube Developer")
-            if "m" in data["flags"]:
-                embed.add_field(name="'m'", value="This Account can Moderate the Classicube Forum and view any post (including hidden posts)")
-            if "e" in data["flags"]:
-                embed.add_field(name="'e'", value="This Account has Classicube home page blog editing permissions")
-            if "p" in data["flags"]:
-                embed.add_field(name="'p'", value="This Account belongs to a player who supports Classicube")
-            if "b" in data["flags"]:
-                embed.add_field(name="'b'", value="This Account is banned from the forums thus it does not have access") 
-            if "r" in data["flags"]:
-                embed.add_field(name="'r'", value="This Account has a pending password recovery email request")
-            if "u" in data["flags"]:
-                embed.add_field(name="'u'", value="This Account hasn't been verified yet")
-            if data["id"] == 1:
-                embed.add_field(name="Special", value="This Account belongs to the Classicube Owner")
-
-            embed.set_footer(text="\U00002063", icon_url="https://www.classicube.net/static/img/cc-cube-small.png")
-            embed.set_image(url="attachment://skin.png")
-            embed.timestamp = datetime.utcnow()
-            await ctx.send(files=[file, file2], embed=embed)
-        
-        else:
-            data = await self.REST("https://www.classicube.net/api/players/")
-            playercount = data["playercount"]
-            
-            onlinecount = 0
-            activemaxcount = 0 
-            inactivemaxcount = 0
-            maxcount = 0
-            servercount = 0
-            players = ""
-
-            data = await self.REST("https://www.classicube.net/api/servers/")
-            servercount += len(data["servers"])
-            serverlist = []
-            activeserverlist = []
-            servers = ""
-            activeservers = len([s for s in data["servers"] if s["players"]])
-            inactiveservers = len([s for s in data["servers"] if not s["players"]])
-              
-                        
-            for server in sorted(data["servers"], key=lambda k: k["players"], reverse=True):
-                
-                # Calculates all servers
-                if server["players"] >= 0:
-                    maxcount += server["maxplayers"]
-                
-                # Calculates inactive servers
-                if server["players"] == 0:
-                    inactivemaxcount += server["maxplayers"]
-                
-                # Calculates active servers
-                if server["players"] > 0:
-                    temp = "[" + str(server["country_abbr"]) + "] [" + str(server["name"]) + "](https://www.classicube.net/server/play/" + str(server["hash"]) + ") | " + "Featured:" + str(server["featured"]) + " | " + str(server["players"]) + "/" + str(server["maxplayers"])
-                    onlinecount += server["players"]
-                    activemaxcount += server["maxplayers"]
-                    
-                    if len(servers) + len("\n---\n") + len(temp) > 1024:
-                        serverlist.append(servers)
-                        servers = ""    
-                    servers += temp+"\n"
-                    
-            serverlist.append(servers)                                           	  
-
-            embed = discord.Embed(title="ClassiCube", colour=0x977dab)
-            embed.add_field(name="Total Accounts", value=playercount)
-            
-            embed.add_field(name="Online Players", value=str(onlinecount))
-            embed.add_field(name="Active Servers", value= str(activeservers))
-            
-            embed.add_field(name="Active slots", value=str(activemaxcount))
-            embed.add_field(name="Inactive slots", value=str(inactivemaxcount))
-            embed.add_field(name="Inactive Servers", value= str(inactiveservers))
-            embed.add_field(name="Total Slots", value=str(maxcount))
-            embed.add_field(name="Total Servers", value=servercount)     
-            
-            
-            for i in range(len(serverlist)):
-                embed.add_field(name=("("+str(i+1)+"/" + str(len(serverlist))+")" if len(serverlist) != 1 else "") + "Servers with players\nClick the server names to join!", value=serverlist[i])
-
-            embed.add_field(name="Stats: ", value="There are " + str(activeservers) + " out of " + str(servercount) + " servers active with " + str(inactiveservers) + " being inactive. " + str(onlinecount) + " slots are being used from a total of " + str(maxcount) + " available slots." + "The most popular server is " + str(serverlist[0].split("\n")[0]))         
-            
-            embed.set_footer(text="\U00002063", icon_url="https://www.classicube.net/static/img/cc-cube-small.png")
-            embed.timestamp = datetime.utcnow()
-            await ctx.send(embed=embed)
 
 
     @commands.command(name="wynncraft", aliases=["wc", "wynn"])
@@ -512,6 +555,7 @@ class APIs(commands.Cog):
         embed.timestamp = datetime.strptime(data["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ")
         await ctx.send(embed=embed)
 
+
     @commands.command(name="twitch")
     async def TwitchAPI(self, ctx, *, user):
         """Gets information about twitch users"""
@@ -581,6 +625,18 @@ class APIs(commands.Cog):
         embed.add_field(name="Example", value="```"+data["example"].replace("\r","")+"```")
         embed.set_footer(text=str(data["thumbs_up"])+"\N{THUMBS UP SIGN}, " + str(data["thumbs_down"]) + "\N{THUMBS DOWN SIGN} | Submitted")
         embed.timestamp = datetime.strptime(data["written_on"].split("T")[0], "%Y-%m-%d")
+        await ctx.send(embed=embed)
+
+
+    @commands.command(name="user")
+    async def discordUser(self, ctx, *, user):
+        """Gets information about discord users."""
+        user = await commands.UserConverter().convert(ctx, user)
+        embed = discord.Embed(title="Discord User " + user.name + "#" + str(user.discriminator), colour=0x7289DA)
+        embed.set_thumbnail(url=str(user.avatar_url))
+        embed.add_field(name="Account created", value="On " + user.created_at.strftime("%c") + "\n" + self.td_format(datetime.utcnow() - user.created_at) + " ago")
+        embed.add_field(name="Display Name", value=user.display_name)
+        embed.set_footer(text="User ID" + str(user.id))
         await ctx.send(embed=embed)
 
 
@@ -698,17 +754,6 @@ class APIs(commands.Cog):
             embed.add_field(name="+", value="\n".join(extra))
         embed.set_footer(icon_url="https://about.twitter.com/etc/designs/about-twitter/public/img/favicon-32x32.png", text="Twitter • Account created")
         embed.timestamp = datetime.strptime(data["created_at"], "%a %b %d %H:%M:%S %z %Y")
-        await ctx.send(embed=embed)
-
-
-    @commands.command(name="user")
-    async def discordUser(self, ctx, *, user):
-        """Gets information about discord users."""
-        user = await commands.UserConverter().convert(ctx, user)
-        embed = discord.Embed(title="Discord User " + user.name + "#" + str(user.discriminator), colour=0x7289DA)
-        embed.set_thumbnail(url=str(user.avatar_url))
-        embed.add_field(name="Account created", value="On " + user.created_at.strftime("%c") + "\n" + self.td_format(datetime.utcnow() - user.created_at) + " ago")
-        embed.set_footer(text="User ID" + str(user.id))
         await ctx.send(embed=embed)
 
 

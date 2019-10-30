@@ -1,3 +1,4 @@
+aiohttp ==2.3.1
 aioauth-client==0.17.3
-discord.py==1.1.1
+discord.py==0.16.12
 Pillow==6.1.0
