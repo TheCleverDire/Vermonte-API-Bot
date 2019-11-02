@@ -179,17 +179,10 @@ class APIs(commands.Cog):
             if flags:
                 embed.add_field(name="Flags", value=", ".join(flags))
 
-            if await self.REST("https://static.classicube.net/skins/" + str(data["username"]) + ".png", returns="r.status == 200"):
-                embed.add_field(name="Skin URL", value="[Click me](https://static.classicube.net/skins/" + str(data["username"]) + ".png)")
-                await BotUtils.skinRenderer2D("https://static.classicube.net/skins/" + str(data["username"]) + ".png", fromFile=False)
-                await BotUtils.headRenderer("https://static.classicube.net/skins/" + str(data["username"]) + ".png", fromFile=False)
-                file = discord.File("skins/2d/" + str(data["username"]) + ".png", filename="skin.png")
-                file2 = discord.File("skins/head/" + str(data["username"]) + ".png", filename="head.png")
-            else:
-                await BotUtils.skinRenderer2D("https://gamepedia.cursecdn.com/minecraft_gamepedia/3/37/Steve_skin.png")
-                await BotUtils.headRenderer("https://gamepedia.cursecdn.com/minecraft_gamepedia/3/37/Steve_skin.png")
-                file = discord.File("skins/2d/Steve_skin.png", filename="skin.png")
-                file2 = discord.File("skins/head/Steve_skin.png", filename="head.png")
+           if await REST("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", returns="r.status == 200"):
+                 embed.add_field(name="Skin URL", value="[Click me](https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png)")
+                 await skinRenderer2D("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", fromFile=False)
+                 await headRenderer("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", fromFile=False)                file2 = discord.File("skins/head/Steve_skin.png", filename="head.png")
 
             embed.add_field(name="Flag Descriptions: ", value="--------")
 
