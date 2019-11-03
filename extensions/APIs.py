@@ -169,7 +169,14 @@ class APIs(commands.Cog):
             else:
                 embed.set_author(name=data["username"] + " - " + str(data["id"]), icon_url="attachment://head.png")          
             
-            embed.set_thumbnail(url="https://www.classicube.net/face/" + str(data["username"]) + ".png")
+            
+            if await self.REST("https://classicube.s3.amazonaws.com/face/" + str(data["username"]) + ".png", returns="r.status == 200"):
+                embed.set_thumbnail(url="https://classicube.s3.amazonaws.com/face/" + str(data["username"]) + ".png")
+            else: 
+            	  embed.set_thumbnail(url="https://www.classicube.net/face/" + str(data["username"]) + ".png")
+            
+            
+            embed.add_field(name="Avatar Url", value="[Click me](https://classicube.s3.amazonaws.com/face/" + str(data["username"]) + ".png)")
             embed.add_field(name="ID", value=data["id"])
             
             ago = self.td_format(datetime.utcnow() - datetime.utcfromtimestamp(data["registered"]))
@@ -179,10 +186,17 @@ class APIs(commands.Cog):
             if flags:
                 embed.add_field(name="Flags", value=", ".join(flags))
 
-           if await REST("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", returns="r.status == 200"):
-                 embed.add_field(name="Skin URL", value="[Click me](https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png)")
-                 await skinRenderer2D("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", fromFile=False)
-                 await headRenderer("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", fromFile=False)                file2 = discord.File("skins/head/Steve_skin.png", filename="head.png")
+            if await self.REST("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", returns="r.status == 200"):
+                embed.add_field(name="Skin URL", value="[Click me](https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png)")
+                await BotUtils.skinRenderer2D("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", fromFile=False)
+                await BotUtils.headRenderer("https://classicube.s3.amazonaws.com/skin/" + str(data["username"]) + ".png", fromFile=False)
+                file = discord.File("skins/2d/" + str(data["username"]) + ".png", filename="skin.png")
+                file2 = discord.File("skins/head/" + str(data["username"]) + ".png", filename="head.png")
+            else:
+                await BotUtils.skinRenderer2D("https://www.classicube.net/static/default.png")
+                await BotUtils.headRenderer("https://www.classicube.net/static/default.png")
+                file = discord.File("skins/2d/default.png", filename="skin.png")
+                file2 = discord.File("skins/head/default.png", filename="head.png")
 
             embed.add_field(name="Flag Descriptions: ", value="--------")
 
