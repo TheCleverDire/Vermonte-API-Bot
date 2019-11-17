@@ -22,6 +22,8 @@ if __name__ == '__main__':
 
     @bot.event
     async def on_message(message):
+        if message.author.bot:
+            return
         ctx = await bot.get_context(message)
         if ctx.valid:
             await message.add_reaction("\N{HOURGLASS}")
