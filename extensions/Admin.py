@@ -2,6 +2,8 @@ from discord.ext import commands
 import asyncio
 import traceback
 import discord
+from discord import CategoryChannel, Client, Colour, Embed, Guild, Member, Role, TextChannel, User, VoiceChannel, utils
+import colorsys
 import inspect
 import textwrap
 from contextlib import redirect_stdout
@@ -196,7 +198,7 @@ class Admin(commands.Cog):
     @commands.command(pass_context=True, hidden=True)
     @commands.is_owner()
     async def repl(self, ctx):
-        """Launches an interactive REPL session."""
+        """Launches an interactive Eval session."""
         variables = {
             'ctx': ctx,
             'bot': self.bot,
@@ -217,13 +219,13 @@ class Admin(commands.Cog):
         def check(m):
             return m.author.id == ctx.author.id and \
                    m.channel.id == ctx.channel.id and \
-                   m.content.startswith('`')
+                   m.content.startswith('')
 
         while True:
             try:
                 response = await self.bot.wait_for('message', check=check, timeout=10.0 * 60.0)
             except asyncio.TimeoutError:
-                await ctx.send('Exiting REPL session.')
+                await ctx.send('Exiting Eval session.')
                 self.sessions.remove(ctx.channel.id)
                 break
 
@@ -238,7 +240,7 @@ class Admin(commands.Cog):
             if cleaned.count('\n') == 0:
                 # single statement, potentially 'eval'
                 try:
-                    code = compile(cleaned, '<repl session>', 'eval')
+                    code = compile(cleaned, '<eval session>', 'eval')
                 except SyntaxError:
                     pass
                 else:
@@ -246,7 +248,7 @@ class Admin(commands.Cog):
 
             if executor is exec:
                 try:
-                    code = compile(cleaned, '<repl session>', 'exec')
+                    code = compile(cleaned, '<eval session>', 'exec')
                 except SyntaxError as e:
                     await ctx.send(self.get_syntax_error(e))
                     continue
@@ -343,6 +345,27 @@ class Admin(commands.Cog):
             await ctx.message.add_reaction('\N{OK HAND SIGN}')
         else:
             await self.bot.change_presence(activity=None, status="online")
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def guildlist(self, ctx):
+        """Returns list of guilds bot is in"""
+        
+        bguilds = ""
+        
+        for i in range(len(self.bot.guilds)):
+            bguilds += "- " + str(self.bot.guilds[i]) + "\n"
+
+
+        embed = Embed(
+            colour=Colour.blurple(),
+            description=f"""
+                **Guilds Bot is in**
+                Guilds: {str(bguilds)}
+            """
+        )
+        
+        await ctx.send(embed=embed)
 
     @commands.command(hidden=True)
     @commands.is_owner()

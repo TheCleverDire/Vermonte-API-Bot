@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord import CategoryChannel, Colour, Embed, Guild, Member, Role, TextChannel, User, VoiceChannel, utils
+from discord import CategoryChannel, Client, Colour, Embed, Guild, Member, Role, TextChannel, User, VoiceChannel, utils
 from discord.ext.commands import Bot, BucketType, Cog, Context, command, group
 import typing
 import colorsys
@@ -188,6 +188,34 @@ class Info(commands.Cog):
         )
 
         embed.set_thumbnail(url=user.avatar_url)
+
+        await ctx.send(embed=embed)
+
+
+    @commands.command(name="botinfo", aliases=['bi', 'info'])
+    async def botinfo(self, ctx: Context) -> None:
+        """Returns info about the bot."""
+        
+        created = ctx.me.created_at
+        name = ctx.me.name
+        avatar = ctx.me.avatar_url
+        id = ctx.me.id
+        discrim = ctx.me.discriminator
+        guildcount = len(self.bot.guilds)
+        
+        embed = Embed(
+            colour=Colour.blurple(),
+            description=f"""
+                **Bot information**
+                Created: {created}
+                Name: {name}
+                Discriminator: {discrim}
+                ID: {id}
+                Guilds: {guildcount}
+            """
+        )
+
+        embed.set_thumbnail(url=ctx.me.avatar_url)
 
         await ctx.send(embed=embed)
 
