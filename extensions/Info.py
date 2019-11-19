@@ -43,7 +43,7 @@ class Info(commands.Cog):
             elif type(channel) == VoiceChannel:
                 voice_channels += 1
        
-        # How many of each user status?
+        # How many of each client type status?
         member_count = ctx.guild.member_count
         members = ctx.guild.members
         online = 0
@@ -69,7 +69,7 @@ class Info(commands.Cog):
                 idle += 1
             elif str(member.status) == "dnd":
                 dnd += 1
-       
+        
         for member in members:
             if str(member.mobile_status) == "online":
                 mobile += 1
@@ -237,9 +237,11 @@ class Info(commands.Cog):
         mobile = user.is_on_mobile()
         top = user.top_role
         
+        #List of users roles
         for i in range(len(user.roles)):
             roles += str(user.roles[i]) + ", "
-            
+        
+        #Activitie list for user
         for i in range(len(user.activities)):
             activities += str(user.activities[i]) + " "
         
