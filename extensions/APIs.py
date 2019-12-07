@@ -103,6 +103,29 @@ class APIs(commands.Cog):
     def getCSStat(self, data, stat):
         return [i for i in data["stats"] if i["name"] == stat][0]["value"]
 
+    async def mediawiki(self, ctx, query, apiURL, wikiName, introOnly=True):
+        if introOnly:
+            add = "&exintro="
+        else:
+            add = ""
+        search = await self.REST(apiURL + "?action=query&list=search&format=json&utf8=&srsearch=" + self.escape(query))
+        pageID = str(search["query"]["search"][0]["pageid"])
+        info = await self.REST(apiURL + "?action=query&prop=info|pageimages|extracts&inprop=url|displaytitle&piprop=original&pilicense=any&exchars=500&format=json&explaintext=&utf8=&pageids=" + pageID + add)
+        info = info["query"]["pages"][pageID]
+
+        title = info["displaytitle"]
+        url = info["fullurl"]
+        description = info["extract"]
+        try:
+            imgUrl = info["original"]["source"]
+        except:
+            imgUrl = None
+
+        embed = discord.Embed(title=title + " - " + wikiName, col=0x32cd32, url=url)
+        embed.description = description
+        if imgUrl:
+            embed.set_image(url=imgUrl)
+        await ctx.send(embed=embed)
 
     # ---
     # GAMES
@@ -815,6 +838,40 @@ class APIs(commands.Cog):
                 return
 
         raise commands.CommandError(message="%Invalid page! Currently supported pages: ```\n" + "\n".join([n.title() for n, a in config.statusPages]) + "```")
+
+    # The wiki has to have the TextExtracts extension in order for the API to work.
+    # TODO: Don't rely on TextExtracts by stripping html manually (?)
+
+    @commands.command(name="wiki", aliases=["wikipedia"])
+    async def wiki(self, ctx, *, query):
+        await self.mediawiki(ctx, query, "https://en.wikipedia.org/w/api.php", "Wikipedia")
+
+    @commands.command(name="wiktionary", aliases=["dictionary"])
+    async def wiktionary(self, ctx, *, query):
+        await self.mediawiki(ctx, query, "https://en.wiktionary.org/w/api.php", "Wiktionary")
+
+    @commands.command(name="wikilanguage", aliases=["wikil", "wikilang"])
+    async def wikilanguage(self, ctx, lang, *, query):
+        await self.mediawiki(ctx, query, "https://"+lang+".wikipedia.org/w/api.php", "Wikipedia " + lang.upper())
+
+    @commands.command(name="wiktionarylanguage", aliases=["wiktionaryl", "wiktionarylang", "dictionarylanguage", "dictionarylang", "dictionaryl"])
+    async def wiktionarylanguage(self, ctx, lang, *, query):
+        await self.mediawiki(ctx, query, "https://"+lang+".wiktionary.org/w/api.php", "Wiktionary " + lang.upper())
+
+    @commands.command(name="gamepedia")
+    async def gamepedia(self, ctx, wiki, *, query):
+        await self.mediawiki(ctx, query, "https://"+wiki+".gamepedia.com/api.php", wiki.title() + " Wiki")
+
+    # TODO: Bulbapedia doesn't return pageIDs in searches
+    """@commands.command(name="pokémon", aliases=["pokemon", "bulbapedia"])
+    async def bulbapedia(self, ctx, *, query):
+        await self.mediawiki(ctx, query, "https://bulbapedia.bulbagarden.net/w/api.php", "Bulbapedia")"""
+
+    # Enable this if fandom ever decides to update their MediaWiki installation. Fandom's version (1.19.24) was last updated March 31st, 2015.
+    # Fandom also disabled searching API so :shrug:
+    """@commands.command(name="fandom")
+    async def fandom(self, ctx, wiki, *, query):
+        await self.mediawiki(ctx, query, "https://"+wiki+".fandom.com/api.php", wiki.title() + " Wiki")"""
 
 def setup(bot):
     bot.add_cog(APIs(bot))

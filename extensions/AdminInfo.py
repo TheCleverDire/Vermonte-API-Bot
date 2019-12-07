@@ -9,6 +9,38 @@ class AdminInfo(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+       
+    @commands.command(name='invitations')
+    @commands.has_permissions(view_audit_log=True)
+    async def invite_list(self, ctx: Context) -> None:
+        """Retrieves a list of active invites"""
+        invit = ""
+        invitations = await ctx.guild.invites()
+        for invite in invitations:
+            temp = "Max Age: " + str(invite["max_age"]) + "Code: " + str(invite["code"]) + "Guild: " + str(invite["guild"])
+            invit += temp+ "\n"
+            invitelist.append(invit)
+            
+        embed.discord.Embed(title="Invites", colour=Colour.blurple())
+            
+        for i in range(len(invitelist)):
+            embed.add_field(name="Invite", value=invitelist[i])
+    
+        ctx.send(embed=embed)
+       
+       
+       
+    @commands.command(name='auditlog')
+    @commands.has_permissions(view_audit_log=True)
+    async def audit_log(self, ctx: Context) -> None:
+        """Retrieves info from the audit log"""
+        
+        embed = discord.Embed(title="Auditlog", colour=Colour.blurple())
+        
+        async for entry in ctx.guild.audit_logs(limit=20):
+            embed.add_field(name="---", value='{0.user} did {0.action} to {0.target}'.format(entry))
+
+        await ctx.send(embed=embed)
         
     @commands.command(name='banlist', aliases=['blist'])
     @commands.is_owner()
@@ -24,6 +56,7 @@ class AdminInfo(commands.Cog):
                 {banlist}
             """
         )
+        embed.set_footer(text=str(len(banlist)) + " Banned Users", icon_url="")
         
         await ctx.send(embed=embed)
         

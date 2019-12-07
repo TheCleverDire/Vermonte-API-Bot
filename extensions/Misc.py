@@ -5,6 +5,7 @@ import subprocess
 import json
 import math
 import re
+import sys
 import time
 import asyncio
 
@@ -59,6 +60,17 @@ class Misc(commands.Cog):
         embed.set_footer(text=str(ctx.message.author.name) + '#' +  str(ctx.message.author.discriminator), icon_url=ctx.message.author.avatar_url)
         await ctx.message.delete()
         await ctx.send(embed=embed, content='')
+
+    @commands.command()
+    async def whois(self, ctx, *, domain):
+        """Whois"""
+        if not sys.platform.startswith('linux'):
+            await ctx.send("This command is only usable when the bot is hosted on linux. Sorry!")
+            return
+        output = subprocess.check_output(["whois", domain], stderr=subprocess.PIPE).decode("utf-8")
+
+        for msg in splitMessage(output):
+            await ctx.send(msg)
 
     @commands.command(aliases=["id"])
     async def snowflake(self, ctx, *, snowflake):
