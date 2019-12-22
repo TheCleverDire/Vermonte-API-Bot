@@ -9,6 +9,7 @@ import urllib.parse
 import BotUtils
 from aioauth_client import TwitterClient
 import aiohttp
+import asyncio
 
 class APIs(commands.Cog):
     """APIs"""
@@ -103,33 +104,31 @@ class APIs(commands.Cog):
     def getCSStat(self, data, stat):
         return [i for i in data["stats"] if i["name"] == stat][0]["value"]
 
-    async def mediawiki(self, ctx, query, apiURL, wikiName, introOnly=True):
-        if introOnly:
-            add = "&exintro="
-        else:
-            add = ""
-        search = await self.REST(apiURL + "?action=query&list=search&format=json&utf8=&srsearch=" + self.escape(query))
-        pageID = str(search["query"]["search"][0]["pageid"])
-        info = await self.REST(apiURL + "?action=query&prop=info|pageimages|extracts&inprop=url|displaytitle&piprop=original&pilicense=any&exchars=500&format=json&explaintext=&utf8=&pageids=" + pageID + add)
-        info = info["query"]["pages"][pageID]
-
-        title = info["displaytitle"]
-        url = info["fullurl"]
-        description = info["extract"]
-        try:
-            imgUrl = info["original"]["source"]
-        except:
-            imgUrl = None
-
-        embed = discord.Embed(title=title + " - " + wikiName, col=0x32cd32, url=url)
-        embed.description = description
-        if imgUrl:
-            embed.set_image(url=imgUrl)
-        await ctx.send(embed=embed)
-
     # ---
     # GAMES
     # ---
+
+    @commands.command(name="fetchcc")
+    async def fetch_cc(self, ctx, *,  server=None):
+        """Fetches Classicube Server data"""
+        await ctx.send("Enabled auto fetch of Classicube Server Files")
+        data = await self.REST("https://www.classicube.net/api/servers/")
+
+        active = True
+        while active == True:
+            f = open("classicube/"+datetime.now().strftime('%Y-%m-%d - %I:%M %p')+".json", "a+")
+            f.write(str(data["servers"])+"\n")
+            await asyncio.sleep(3600)
+            if active == False:
+               break
+
+    @commands.command(name="dontfetchcc")
+    async def dis_cc(self, ctx, *,  server=None):
+        """No Longer Fetch Classicube Server data"""
+        await ctx.send("Disabled auto fetch of Classicube Server Files")
+        data = await self.REST("https://www.classicube.net/api/servers/")
+
+        active = False
 
     @commands.command(name="classicube", aliases=["cc"])
     async def classiCubeAPI(self, ctx, *, user=None, server=None):
@@ -196,7 +195,7 @@ class APIs(commands.Cog):
             if await self.REST("https://classicube.s3.amazonaws.com/face/" + str(data["username"]) + ".png", returns="r.status == 200"):
                 embed.set_thumbnail(url="https://classicube.s3.amazonaws.com/face/" + str(data["username"]) + ".png")
             else: 
-            	  embed.set_thumbnail(url="https://www.classicube.net/face/" + str(data["username"]) + ".png")
+                embed.set_thumbnail(url="https://www.classicube.net/face/" + str(data["username"]) + ".png")
             
             
             embed.add_field(name="Avatar Url", value="[Click me](https://classicube.s3.amazonaws.com/face/" + str(data["username"]) + ".png)")
@@ -205,7 +204,7 @@ class APIs(commands.Cog):
             ago = self.td_format(datetime.utcnow() - datetime.utcfromtimestamp(data["registered"]))
             if len(ago) == 0:
                 ago = "Under a minute"
-            embed.add_field(name="Account created", value="On " + datetime.utcfromtimestamp(data["registered"]).strftime("%c") + "\n" + ago + " ago")
+            embed.add_field(name="Account created", value="On " + datetime.utcfromtimestamp(data["registered"]).strftime("%A %d %B %Y %H:%M") + "\n" + ago + " ago")
             if flags:
                 embed.add_field(name="Flags", value=", ".join(flags))
 
@@ -259,6 +258,11 @@ class APIs(commands.Cog):
             players = ""
 
             data = await self.REST("https://www.classicube.net/api/servers/")
+
+            f = open("classicube/"+datetime.now().strftime('%Y-%m-%d - %I:%M %p')+".json", "a+")
+            f.write(str(data)+"\n")
+            f.close()
+
             servercount += len(data["servers"])
             serverlist = []
             activeserverlist = []
@@ -277,11 +281,11 @@ class APIs(commands.Cog):
             activeserverlist = [s for s in data["servers"] if s["players"]]
                         
             for server in sorted(data["servers"], key=lambda k: k["players"], reverse=True):
-                
+
                 # Calculates all servers
                 if server["players"] >= 0:
                     maxcount += server["maxplayers"]
-                
+
                 # Calculates inactive servers
                 if server["players"] == 0:
                     inactivemaxcount += server["maxplayers"]
@@ -301,12 +305,10 @@ class APIs(commands.Cog):
 
             embed = discord.Embed(title="ClassiCube", colour=0x977dab)
             embed.add_field(name="Total Accounts", value=playercount)
-            
             embed.add_field(name="Online Players", value=str(onlinecount) + " player(s)")
             
-            
-            embed.add_field(name="Dead Servers", value=str(deadservers) + " server(s)")
             embed.add_field(name="Active Servers", value= str(activeservers) + " server(s)")
+            embed.add_field(name="Dead Servers", value=str(deadservers) + " server(s)")
             embed.add_field(name="Very Quiet Servers", value=str(superquietservers) + " server(s)")
             embed.add_field(name="Quiet Servers", value=str(quietservers) + " server(s)")
             embed.add_field(name="Typical Servers", value=str(typicalservers) + " server(s)")
@@ -318,18 +320,21 @@ class APIs(commands.Cog):
             embed.add_field(name="Inactive slots", value=str(inactivemaxcount) + " slot(s)")
             embed.add_field(name="Total Servers", value=str(servercount) + " server(s)")
             embed.add_field(name="Total Slots", value=str(maxcount) + " slot(s)")
-                 
             
             
-            for i in range(len(serverlist)):
-                embed.add_field(name="Servers with players\nClick the server names to join!", value=serverlist[i])
-            
-            embed.add_field(name="Stats: ", value="There are " + str(activeservers) + " out of " + str(servercount) + " servers active with " + str(inactiveservers) + " being inactive. " + str(onlinecount) + " slots are being used from a total of " + str(maxcount) + " available slots." + "The most popular server is " + str(activeserverlist[0]) + " and the least popular server is " + str(activeserverlist[-1]))        
-            embed.add_field(name="Player Stats: ", value= str(onlinecount) + " players are currently online.")
                         
             embed.set_footer(text="\U00002063", icon_url="https://www.classicube.net/static/img/cc-cube-small.png")
             embed.timestamp = datetime.utcnow()
             await ctx.send(embed=embed)
+
+            sembed = discord.Embed(title="Servers")
+            for i in range(len(serverlist)):
+                sembed.add_field(name="Servers with players\nClick the server names to join!", value=serverlist[i], inline=False)
+                
+            sembed.add_field(name="Stats: ", value="There are " + str(activeservers) + " out of " + str(servercount) + " servers active with " + str(inactiveservers) + " being inactive. " + str(onlinecount) + " slots are being used from a total of " + str(maxcount) + " available slots." + "The most popular server is " + str(serverlist[0].split("\n")[0]), inline=False)        
+            sembed.add_field(name="Player Stats: ", value= str(onlinecount) + " players are currently online.")
+            
+            await ctx.send(embed=sembed)
 
 
     @commands.command(name="minecraft", aliases=["mc"])
@@ -838,40 +843,6 @@ class APIs(commands.Cog):
                 return
 
         raise commands.CommandError(message="%Invalid page! Currently supported pages: ```\n" + "\n".join([n.title() for n, a in config.statusPages]) + "```")
-
-    # The wiki has to have the TextExtracts extension in order for the API to work.
-    # TODO: Don't rely on TextExtracts by stripping html manually (?)
-
-    @commands.command(name="wiki", aliases=["wikipedia"])
-    async def wiki(self, ctx, *, query):
-        await self.mediawiki(ctx, query, "https://en.wikipedia.org/w/api.php", "Wikipedia")
-
-    @commands.command(name="wiktionary", aliases=["dictionary"])
-    async def wiktionary(self, ctx, *, query):
-        await self.mediawiki(ctx, query, "https://en.wiktionary.org/w/api.php", "Wiktionary")
-
-    @commands.command(name="wikilanguage", aliases=["wikil", "wikilang"])
-    async def wikilanguage(self, ctx, lang, *, query):
-        await self.mediawiki(ctx, query, "https://"+lang+".wikipedia.org/w/api.php", "Wikipedia " + lang.upper())
-
-    @commands.command(name="wiktionarylanguage", aliases=["wiktionaryl", "wiktionarylang", "dictionarylanguage", "dictionarylang", "dictionaryl"])
-    async def wiktionarylanguage(self, ctx, lang, *, query):
-        await self.mediawiki(ctx, query, "https://"+lang+".wiktionary.org/w/api.php", "Wiktionary " + lang.upper())
-
-    @commands.command(name="gamepedia")
-    async def gamepedia(self, ctx, wiki, *, query):
-        await self.mediawiki(ctx, query, "https://"+wiki+".gamepedia.com/api.php", wiki.title() + " Wiki")
-
-    # TODO: Bulbapedia doesn't return pageIDs in searches
-    """@commands.command(name="pokémon", aliases=["pokemon", "bulbapedia"])
-    async def bulbapedia(self, ctx, *, query):
-        await self.mediawiki(ctx, query, "https://bulbapedia.bulbagarden.net/w/api.php", "Bulbapedia")"""
-
-    # Enable this if fandom ever decides to update their MediaWiki installation. Fandom's version (1.19.24) was last updated March 31st, 2015.
-    # Fandom also disabled searching API so :shrug:
-    """@commands.command(name="fandom")
-    async def fandom(self, ctx, wiki, *, query):
-        await self.mediawiki(ctx, query, "https://"+wiki+".fandom.com/api.php", wiki.title() + " Wiki")"""
 
 def setup(bot):
     bot.add_cog(APIs(bot))

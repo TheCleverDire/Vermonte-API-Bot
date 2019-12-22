@@ -26,7 +26,7 @@ class Info(commands.Cog):
         created = guild.created_at
         features = ", ".join(guild.features)
         
-        id = ctx.guild.id
+        id = guild.id
         owner = guild.owner
         ownerdn = guild.owner.display_name
         
@@ -187,8 +187,14 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
         
     @commands.command(name="textchannelinfo", aliases=['tci'])
-    async def text_channel_info(self, ctx: Context, channel: discord.TextChannel) -> None:
+    async def text_channel_info(self, ctx: Context, channel_id: int = None) -> None:
         """Returns info about a channel."""   
+        if channel_id is not None and await self.bot.is_owner(ctx.author):
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                return await ctx.send(f'Invalid Channel ID given.')
+        else:
+            channel = ctx.channel
          
         name = channel.name
         created = channel.created_at
@@ -216,8 +222,14 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
         
     @commands.command(name="voicechannelinfo", aliases=['vci'])
-    async def voice_channel_info(self, ctx: Context, channel: discord.VoiceChannel) -> None:
+    async def voice_channel_info(self, ctx: Context, channel_id: int = None) -> None:
         """Returns info about a channel."""   
+        if channel_id is not None:
+            channel = self.bot.get_channel(channel_id)
+            if channel is None:
+                return await ctx.send(f'Invalid Channel ID given.')
+        else:
+            channel = ctx.channel
         
         name = channel.name
         created = channel.created_at
@@ -245,8 +257,14 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
     
     @commands.command(name="userinfo", aliases=['ui', 'clientinfo'])
-    async def user_info(self, ctx: Context, user: discord.User) -> None:
+    async def user_info(self, ctx: Context, *, user_id: int = None) -> None:
         """Returns info about a user."""
+        if user_id is not None and await self.bot.is_owner(ctx.author):
+            user = self.bot.get_user(user_id)
+            if user is None:
+                return await ctx.send(f'Invalid User ID given.')
+        else:
+            user = user
         
         created = user.created_at
         name = user.name
@@ -291,9 +309,15 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="memberinfo", aliases=['mi'])
-    async def member_info(self, ctx: Context, user: discord.Member) -> None:
+    async def member_info(self, ctx: Context, guild_id: int = None, *, user_id: int = None) -> None:
         """Returns info about a member."""
-               
+        if user_id is not None and await self.bot.is_owner(ctx.author):
+            user = self.bot.get_guild(guild_id).get_member(user_id)
+            if user is None:
+                return await ctx.send(f'Invalid User ID given.')
+        else:
+            user = user
+                   
         roles = ""
         activities = ""
         joined = user.joined_at
@@ -335,18 +359,22 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
         
     @commands.command(name="avatar")
-    async def avatar(self, ctx: Context, user: discord.Member) -> None:
+    async def avatar(self, ctx: Context, *, user: discord.Member) -> None:
+        if user is not None and await self.bot.is_owner(ctx.author):
+            user = self.bot.get_user(user)
+            if user is None:
+                return await ctx.send(f'Invalid User ID given.')
+        else:
+            user = user
+        
         """Returns a users avatar"""
         
         avatar = user.avatar_url
         
-        embed = discord.Embed(title=user.display_name +"'s avatar", colour=Colour.blurple())
-        embed.set_image(url=avatar)
-        
-        await ctx.send(embed=embed)
+        await ctx.send(avatar)
         
     @commands.command(name="roleperms")
-    async def role_perm_info(self, ctx: Context, role: discord.Role) -> None:
+    async def role_perm_info(self, ctx: Context, *, role: discord.Role) -> None:
         """Returns info about a members permissions"""
         
         admin = role.permissions.administrator
@@ -365,7 +393,7 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="perms")
-    async def perm_info(self, ctx: Context, user: Member) -> None:
+    async def perm_info(self, ctx: Context, *, user: Member) -> None:
         """Returns info about a members permissions"""
         
         perms = ""
@@ -439,10 +467,17 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
     
     @commands.command(name="roles")
-    async def roles_info(self, ctx: Context) -> None:
+    async def roles_info(self, ctx: Context, *, guild_id: int = None) -> None:
         """Returns a list of all roles and their corresponding IDs."""
+        if guild_id is not None and await self.bot.is_owner(ctx.author):
+            guild = self.bot.get_guild(guild_id)
+            if guild is None:
+                return await ctx.send(f'Invalid Guild ID given.')
+        else:
+            guild = ctx.guild
+            
         # Sort the roles by the order as shown in the client's Roles UI
-        roles = sorted(ctx.guild.roles, key=lambda role: role.position, reverse=True)
+        roles = sorted(guild.roles, key=lambda role: role.position, reverse=True)
         #roles = [role for role in roles if role.name != "@everyone"]        
 
         # Build a string
@@ -686,7 +721,14 @@ class Info(commands.Cog):
     @commands.command(name="channellist")
     async def channel_list(self, ctx: Context, *, guild_id: int = None) -> None:
         """Retrieve List of channels"""
-        channels = sorted(ctx.guild.channels, key=lambda channel: channel.position, reverse=False)     
+        if guild_id is not None and await self.bot.is_owner(ctx.author):
+            guild = self.bot.get_guild(guild_id)
+            if guild is None:
+                return await ctx.send(f'Invalid Guild ID given.')
+        else:
+            guild = ctx.guild
+        
+        channels = sorted(guild.channels, key=lambda channel: channel.position, reverse=False)     
                                 
         channel_string = ""
         for channel in channels:
@@ -703,8 +745,15 @@ class Info(commands.Cog):
           
         
     @commands.command(name="memberroles")
-    async def user_roles_info(self, ctx: Context, user: discord.Member) -> None:
+    async def user_roles_info(self, ctx: Context, *, user_id: int = None) -> None:
         """Returns a list of a members roles and their corresponding IDs."""
+        if user_id is not None and await self.bot.is_owner(ctx.author):
+            user = self.bot.get_user(user_id)
+            if user is None:
+                return await ctx.send(f'Invalid User ID given.')
+        else:
+            user = user
+       
         # Sort the roles by the order as shown in the client's Roles UI
         roles = sorted(user.roles, key=lambda role: role.position, reverse=True)
         #roles = [role for role in roles if role.name != "@everyone"]        
@@ -720,10 +769,17 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)     
 
     @commands.command(name="roleinfo", aliases=['ri'])
-    async def roleinfo(self, ctx, *, rolename):
+    async def roleinfo(self, ctx, *, rolename, guild_id: int = None):
         '''Get information about a role. Case Sensitive!'''
+        if guild_id is not None and await self.bot.is_owner(ctx.author):
+            guild = self.bot.get_guild(guild_id)
+            if guild is None:
+                return await ctx.send(f'Invalid Guild ID given.')
+        else:
+            guild = ctx.guild
+        
         try:
-            role = discord.utils.get(ctx.message.guild.roles, name=rolename)
+            role = discord.utils.get(guild.roles, name=rolename)
         except:
             return await ctx.send(f"Role could not be found. The system IS case sensitive!")
 
