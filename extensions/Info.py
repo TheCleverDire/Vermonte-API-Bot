@@ -25,7 +25,7 @@ class Info(commands.Cog):
         
         created = guild.created_at
         features = ", ".join(guild.features)
-        
+
         id = guild.id
         owner = guild.owner
         ownerdn = guild.owner.display_name
@@ -68,86 +68,12 @@ class Info(commands.Cog):
 
         region = guild.region
         
-        
-        # How many of each type of channel?
-        roles = len(guild.roles)
-        channels = guild.channels
-        text_channels = 0
-        category_channels = 0
-        voice_channels = 0
-        for channel in channels:
-            if type(channel) == TextChannel:
-                text_channels += 1
-            elif type(channel) == CategoryChannel:
-                category_channels += 1
-            elif type(channel) == VoiceChannel:
-                voice_channels += 1
-       
-        # How many of each client type status?
-        member_count = guild.member_count
-        members = guild.members
-        available = 0
-        online = 0
-        dnd = 0
-        idle = 0
-        offline = 0
-        mobile = 0
-        web = 0
-        desktop = 0
-        mobileonline = 0
-        webonline = 0
-        desktoponline = 0
-        mobileidle = 0
-        webidle = 0
-        desktopidle = 0
-        mobilednd = 0
-        webdnd = 0
-        desktopdnd = 0
-        
-        for member in members:
-            if str(member.status) == "online" or str(member.status) == "idle" or str(member.status) == "dnd":
-                available += 1
-            if str(member.status) == "online":
-                online += 1
-            elif str(member.status) == "offline":
-                offline += 1
-            elif str(member.status) == "idle":
-                idle += 1
-            elif str(member.status) == "dnd":
-                dnd += 1
-        
-        for member in members:
-            if str(member.mobile_status) == "online" or str(member.mobile_status) == "dnd" or str(member.mobile_status) == "idle":
-               mobile += 1
-            if str(member.web_status) == "online" or str(member.web_status) == "dnd" or str(member.web_status) == "idle":
-               web += 1
-            if str(member.desktop_status) == "online" or str(member.desktop_status) == "dnd" or str(member.desktop_status) == "idle":
-               desktop += 1
-            if str(member.mobile_status) == "online":
-                mobileonline += 1
-            if str(member.web_status) == "online":
-                webonline += 1
-            if str(member.desktop_status) == "online":
-                desktoponline += 1
-            if str(member.mobile_status) == "dnd":
-                mobilednd += 1
-            if str(member.web_status) == "dnd":
-                webdnd += 1
-            if str(member.desktop_status) == "dnd":
-                desktopdnd += 1
-            if str(member.mobile_status) == "idle":
-                mobileidle += 1
-            if str(member.web_status) == "idle":
-                webidle += 1
-            if str(member.desktop_status) == "idle":
-                desktopidle += 1
-
         embed = discord.Embed(title=str(guild.name) + "'s information", colour=Colour.blurple())
         embed.add_field(name=":id:", value=id)
         embed.add_field(name=":date: Guild Created On", value=created.strftime("%A %d %B %Y %H:%M"))
         embed.add_field(name=":bust_in_silhouette: Owner", value=str(owner) + " aka " + str(ownerdn))
-        embed.add_field(name=":telephone_receiver:  Voice Region", value=" ".join([regionFlag[n] for n in region]))
-        #embed.add_field(name=":telephone_receiver:  Voice Region", value=region)
+        embed.add_field(name=":telephone_receiver: Voice Region", value=" ".join([regionFlag[n] for n in region]))
+        #embed.add_field(name=":telephone_receiver: Voice Region", value=region)
         embed.add_field(name="Nitro Level", value=str(boostlvl) + "/" + str(3))
         embed.add_field(name="# of current boosts", value=str(boostlen) + "/" + str(30))
         if boostlen > 2:
@@ -162,23 +88,9 @@ class Info(commands.Cog):
             embed.add_field(name=".. needed for lvl 3", value="Already unlocked")
         else:
             embed.add_field(name=".. needed for lvl 3", value=str(30 - boostlen))
-        embed.add_field(name=":busts_in_silhouette: # of Members", value=member_count)
-        embed.add_field(name="... of which human", value=len([member for member in guild.members if not member.bot]))
-        embed.add_field(name="... of which bots", value=len([member for member in guild.members if member.bot]))
-        embed.add_field(name="... of Roles", value=roles)
-        embed.add_field(name="... of Text Channels", value=text_channels)
-        embed.add_field(name="... of Voice Channels", value=voice_channels)
-        embed.add_field(name="... of Categories", value=category_channels)
-        embed.add_field(name="Members available (Total)", value=available)
-        embed.add_field(name=":green_circle: Members Online", value=online)
-        embed.add_field(name=":orange_circle: Members Idle", value=idle)
-        embed.add_field(name=":red_circle: Members Busy", value=dnd)
-        embed.add_field(name=":black_circle: Members Offline/Invisible", value=offline)
-        embed.add_field(name=":computer: Members using the Desktop App", value=str(desktop) + " total\n" + str(desktoponline) + " online\n" + str(desktopidle) + " idle\n" + str(desktopdnd) + " busy")
-        embed.add_field(name="Members using the Browser App", value=str(web) + " total\n" + str(webonline) + " online\n" + str(webidle) + " idle\n" + str(webdnd) + " busy")
-        embed.add_field(name=":iphone: Members using the Mobile App", value=str(mobile) + " total\n" + str(mobileonline) + " online\n" + str(mobileidle) + " idle\n" + str(mobilednd) + " busy")
-        embed.set_thumbnail(url=guild.icon_url)
         
+        embed.set_thumbnail(url=guild.icon_url)
+
         if boostlen > 30:
             embed.set_footer(text="Max Level reached", icon_url="")
         else:
@@ -257,15 +169,7 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
     
     @commands.command(name="userinfo", aliases=['ui', 'clientinfo'])
-    async def user_info(self, ctx: Context, *, user_id: int = None) -> None:
-        """Returns info about a user."""
-        if user_id is not None and await self.bot.is_owner(ctx.author):
-            user = self.bot.get_user(user_id)
-            if user is None:
-                return await ctx.send(f'Invalid User ID given.')
-        else:
-            user = user
-        
+    async def user_info(self, ctx: Context, *, user: discord.User) -> None:
         created = user.created_at
         name = user.name
         avatar = user.avatar_url
@@ -309,15 +213,8 @@ class Info(commands.Cog):
         await ctx.send(embed=embed)
 
     @commands.command(name="memberinfo", aliases=['mi'])
-    async def member_info(self, ctx: Context, guild_id: int = None, *, user_id: int = None) -> None:
+    async def member_info(self, ctx: Context, *, user: discord.Member) -> None:
         """Returns info about a member."""
-        if user_id is not None and await self.bot.is_owner(ctx.author):
-            user = self.bot.get_guild(guild_id).get_member(user_id)
-            if user is None:
-                return await ctx.send(f'Invalid User ID given.')
-        else:
-            user = user
-                   
         roles = ""
         activities = ""
         joined = user.joined_at
@@ -372,100 +269,117 @@ class Info(commands.Cog):
         avatar = user.avatar_url
         
         await ctx.send(avatar)
-        
-    @commands.command(name="roleperms")
-    async def role_perm_info(self, ctx: Context, *, role: discord.Role) -> None:
-        """Returns info about a members permissions"""
-        
-        admin = role.permissions.administrator
-        
-        embed = Embed(
-            colour=Colour.blurple(),
-            description=f"""
-                **Permission information for {role.name}**
-                Administrator?: {admin}*
-                
-                _**Notes:**_
-                * This perm overrides all below it making everything else automatically true
-            """
-        )
-        
-        await ctx.send(embed=embed)
 
-    @commands.command(name="perms")
-    async def perm_info(self, ctx: Context, *, user: Member) -> None:
-        """Returns info about a members permissions"""
-        
-        perms = ""
-        if user.guild_permissions.administrator:
-            perms += "Administrator, "
-        if user.guild_permissions.create_instant_invite:
-            perms += "Create Instant Invite, "
-        if user.guild_permissions.kick_members:
-            perms += "Kick Members, "
-        if user.guild_permissions.ban_members:
-            perms += "Ban Members, "
-        if user.guild_permissions.manage_channels:
-            perms += "Manage Channels, "
-        if user.guild_permissions.manage_guild:
-            perms += "Manage Guild, "
-        if user.guild_permissions.add_reactions:
-            perms += "Add Reactions, "
-        if user.guild_permissions.view_audit_log:
-            perms += "View Audit Log, "
-        if user.guild_permissions.read_messages:
-            perms += "Read Messages, "
-        if user.guild_permissions.send_messages:
-            perms += "Send Messages, "
-        if user.guild_permissions.send_tts_messages:
-            perms += "Send TTS Messages, "
-        if user.guild_permissions.manage_messages:
-            perms += "Manage Messages, "
-        if user.guild_permissions.embed_links:
-            perms += "Embed Links, "
-        if user.guild_permissions.attach_files:
-            perms += "Attach Files, "
-        if user.guild_permissions.read_message_history:
-            perms += "Read Message History, "
-        if user.guild_permissions.mention_everyone:
-            perms += "Mention Everyone, "
-        if user.guild_permissions.external_emojis:
-            perms += "Use External Emojis, "
-        if user.guild_permissions.connect:
-            perms += "Connect to Voice, "
-        if user.guild_permissions.speak:
-            perms += "Speak, "
-        if user.guild_permissions.mute_members:
-            perms += "Mute Members, "
-        if user.guild_permissions.deafen_members:
-            perms += "Deafen Members, "
-        if user.guild_permissions.move_members:
-            perms += "Move Members, "
-        if user.guild_permissions.use_voice_activation:
-            perms += "Use Voice Activation, "
-        if user.guild_permissions.change_nickname:
-            perms += "Change Nickname, "
-        if user.guild_permissions.manage_nicknames:
-            perms += "Manage Nicknames, "
-        if user.guild_permissions.manage_roles:
-            perms += "Manage Roles, "
-        if user.guild_permissions.manage_webhooks:
-            perms += "Manage Webhooks, "
-        if user.guild_permissions.manage_emojis:
-            perms += "Manage Emojis, "
+    async def say_overwrites(self, ctx, member: discord.Member, channel):
+        overwrites = channel.overwrites_for(member)
+        e = discord.Embed(colour=member.colour)
+        allowed, denied = [], []
+        for name, value in overwrites:
+            name = name.replace('_', ' ').replace('guild', 'server').title()
+            if value:
+                allowed.append(name)
+            else:
+                denied.append(name)
 
-        if perms is None:
-            perms = "None"
-        else:
-            perms = perms.strip(", ")
-        
-        embed = discord.Embed(title="Permissions for "+user.nick)
-        embed.add_field(name="Permissions", value=perms)
+        e.add_field(name='Allowed', value='\n'.join(allowed))
+        e.add_field(name='Denied', value='\n'.join(denied))
 
-        embed.set_thumbnail(url=user.avatar_url)
+        if member.id == member.guild.owner_id:
+            e.set_footer(text="Member has @owner privilidges")
 
-        await ctx.send(embed=embed)
+        await ctx.send(embed=e)
     
+    async def say_role_overwrites(self, ctx, role: discord.Role, channel):
+        overwrites = channel.overwrites_for(role)
+        e = discord.Embed(colour=role.colour)
+        allowed, denied = [], []
+        for name, value in overwrites:
+            name = name.replace('_', ' ').replace('guild', 'server').title()
+            if value:
+                allowed.append(name)
+            else:
+                denied.append(name)
+
+        e.add_field(name='Allowed', value='\n'.join(allowed))
+        e.add_field(name='Denied', value='\n'.join(denied))
+
+        await ctx.send(embed=e)
+
+    async def say_permissions(self, ctx, member: discord.Member, channel):
+        permissions = channel.permissions_for(member)
+        e = discord.Embed(colour=member.colour)
+        allowed, denied = [], []
+        for name, value in permissions:
+            name = name.replace('_', ' ').replace('guild', 'server').title()
+            if value:
+                allowed.append(name)
+            else:
+                denied.append(name)
+
+        e.add_field(name='Allowed', value='\n'.join(allowed))
+        e.add_field(name='Denied', value='\n'.join(denied))
+
+        if member.id == member.guild.owner_id:
+            e.set_footer(text="Member has @owner privilidges")
+
+        await ctx.send(embed=e)
+    
+    async def say_role_permissions(self, ctx, role: discord.Role, channel):
+        permissions = channel.permissions_for(role)
+        e = discord.Embed(colour=role.colour)
+        allowed, denied = [], []
+        for name, value in permissions:
+            name = name.replace('_', ' ').replace('guild', 'server').title()
+            if value:
+                allowed.append(name)
+            else:
+                denied.append(name)
+
+        e.add_field(name='Allowed', value='\n'.join(allowed))
+        e.add_field(name='Denied', value='\n'.join(denied))
+
+        await ctx.send(embed=e)
+    
+    @commands.command(name="perms")
+    async def perm_info(self, ctx: Context, *, member: discord.Member = None, channel: discord.TextChannel = None) -> None:
+        """Returns info about a members permissions"""
+        
+        channel = channel or ctx.channel
+        if member is None:
+            member = ctx.author
+
+        await self.say_permissions(ctx, member, channel)
+
+    @commands.command(name="roleperms")
+    async def role_perm_info(self, ctx: Context, *, role: discord.Role = None, channel: discord.TextChannel = None) -> None:
+        """Returns info about a roles permissions"""
+        
+        channel = channel or ctx.channel
+        if role is None:
+            member = ctx.author
+
+        await self.say_role_permissions(ctx, role, channel)
+    
+    @commands.command(name="overwrites")
+    async def ow_info(self, ctx: Context, *, member: discord.Member = None, channel: discord.TextChannel = None) -> None:
+        """Returns info about a members overwrites"""
+        
+        channel = channel or ctx.channel
+        if member is None:
+            member = ctx.author
+
+        await self.say_overwrites(ctx, member, channel)
+    
+    @commands.command(name="roleoverwrites")
+    async def role_ow_info(self, ctx: Context, *, role: discord.Role = None, channel: discord.TextChannel = None) -> None:
+        """Returns info about a roles overwrites""" 
+        
+        channel = channel or ctx.channel
+        if role is None:
+            member = ctx.author
+
+        await self.say_role_overwrites(ctx, role, channel)
+
     @commands.command(name="roles")
     async def roles_info(self, ctx: Context, *, guild_id: int = None) -> None:
         """Returns a list of all roles and their corresponding IDs."""
@@ -867,6 +781,121 @@ class Info(commands.Cog):
 
         p_session = PaginatorSession(ctx, footer=f'Created At: {thing}', pages=pages)
         await p_session.run()
+
+    @commands.command(name="guildstats", aliases=["gs"])
+    async def guild_stats(self, ctx: Context, *, guild_id: int = None):
+        """Returns Stats about the Guild"""
+        if guild_id is not None and await self.bot.is_owner(ctx.author):
+            guild = self.bot.get_guild(guild_id)
+            if guild is None:
+                return await ctx.send(f'Invalid Guild ID given.')
+        else:
+            guild = ctx.guild
+
+        # How many of each type of channel?
+        roles = len(guild.roles)
+        channels = guild.channels
+        text_channels = 0
+        category_channels = 0
+        voice_channels = 0
+        for channel in channels:
+            if type(channel) == TextChannel:
+                text_channels += 1
+            elif type(channel) == CategoryChannel:
+                category_channels += 1
+            elif type(channel) == VoiceChannel:
+                voice_channels += 1
+       
+        # How many of each client type status?
+        member_count = guild.member_count
+        members = guild.members
+        available = 0
+        online = 0
+        dnd = 0
+        idle = 0
+        offline = 0
+        mobile = 0
+        web = 0
+        desktop = 0
+        mobileonline = 0
+        webonline = 0
+        desktoponline = 0
+        mobileidle = 0
+        webidle = 0
+        desktopidle = 0
+        mobilednd = 0
+        webdnd = 0
+        desktopdnd = 0
+        
+        for member in members:
+            if str(member.status) == "online" or str(member.status) == "idle" or str(member.status) == "dnd":
+                available += 1
+            if str(member.status) == "online":
+                online += 1
+            elif str(member.status) == "offline":
+                offline += 1
+            elif str(member.status) == "idle":
+                idle += 1
+            elif str(member.status) == "dnd":
+                dnd += 1
+        
+        for member in members:
+            if str(member.mobile_status) == "online" or str(member.mobile_status) == "dnd" or str(member.mobile_status) == "idle":
+               mobile += 1
+            if str(member.web_status) == "online" or str(member.web_status) == "dnd" or str(member.web_status) == "idle":
+               web += 1
+            if str(member.desktop_status) == "online" or str(member.desktop_status) == "dnd" or str(member.desktop_status) == "idle":
+               desktop += 1
+            if str(member.mobile_status) == "online":
+                mobileonline += 1
+            if str(member.web_status) == "online":
+                webonline += 1
+            if str(member.desktop_status) == "online":
+                desktoponline += 1
+            if str(member.mobile_status) == "dnd":
+                mobilednd += 1
+            if str(member.web_status) == "dnd":
+                webdnd += 1
+            if str(member.desktop_status) == "dnd":
+                desktopdnd += 1
+            if str(member.mobile_status) == "idle":
+                mobileidle += 1
+            if str(member.web_status) == "idle":
+                webidle += 1
+            if str(member.desktop_status) == "idle":
+                desktopidle += 1
+
+        cembed = discord.Embed(title="Guild Stats")
+        cembed.add_field(name="**Member Stats**", value="------", inline=False)
+        cembed.add_field(name=":busts_in_silhouette: Total # of Members", value=member_count)
+        cembed.add_field(name="... of which are human", value=len([member for member in guild.members if not member.bot]))
+        cembed.add_field(name="... of which are bots", value=len([member for member in guild.members if member.bot]))
+        cembed.add_field(name="... of which are an Admin (humans)", value=len([member for member in guild.members if member.guild_permissions.administrator and not member.bot]))
+        cembed.add_field(name="... of which are an Admin (bots)", value=len([member for member in guild.members if member.guild_permissions.administrator and member.bot]))
+        cembed.add_field(name="... of which are staff (humans)", value=len([member for member in guild.members if member.guild_permissions.manage_messages and not member.bot]))
+        cembed.add_field(name="... of which are non-staff (humans)", value=len([member for member in guild.members if not member.guild_permissions.manage_messages and not member.bot]))
+        cembed.add_field(name="... of which are staff (bots)", value=len([member for member in guild.members if member.guild_permissions.manage_messages and member.bot]))
+        cembed.add_field(name="... of which are non-staff (bots)", value=len([member for member in guild.members if not member.guild_permissions.manage_messages and member.bot]))
+        cembed.add_field(name="**Role/Channel Stats**", value="------", inline=False)
+        cembed.add_field(name="... of Roles", value=roles)
+        cembed.add_field(name="... of Text Channels", value=text_channels)
+        cembed.add_field(name="... of Voice Channels", value=voice_channels)
+        cembed.add_field(name="... of Categories", value=category_channels)
+        
+        await ctx.send(embed=cembed)
+
+        sembed = discord.Embed(title="Client Stats", description=f"""Details various stats related to how many people are using which clients and who''s online/offline etc""")
+        sembed.add_field(name="**Member Client Status Stats**", value="------", inline=False)
+        sembed.add_field(name=":green_circle: Members Online", value=online)
+        sembed.add_field(name=":orange_circle: Members Idle", value=idle)
+        sembed.add_field(name=":red_circle: Members Busy", value=dnd)
+        sembed.add_field(name=":black_circle: Members Offline/Invisible", value=offline)        
+        sembed.add_field(name="Members available (Total)", value=available)
+        sembed.add_field(name=":computer: Members using the Desktop App", value=str(desktop) + " total\n" + str(desktoponline) + " online\n" + str(desktopidle) + " idle\n" + str(desktopdnd) + " busy")
+        sembed.add_field(name="Members using the Browser App", value=str(web) + " total\n" + str(webonline) + " online\n" + str(webidle) + " idle\n" + str(webdnd) + " busy")
+        sembed.add_field(name=":iphone: Members using the Mobile App", value=str(mobile) + " total\n" + str(mobileonline) + " online\n" + str(mobileidle) + " idle\n" + str(mobilednd) + " busy")
+
+        await ctx.send(embed=sembed)
 
 
 def setup(bot):

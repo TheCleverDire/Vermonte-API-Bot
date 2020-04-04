@@ -3,6 +3,7 @@ import asyncio
 import traceback
 import discord
 from discord import CategoryChannel, Client, Colour, Embed, Guild, Member, Role, TextChannel, User, VoiceChannel, utils
+from discord.ext.commands import Bot, BucketType, Cog, Context, command, group
 import colorsys
 import inspect
 import textwrap
@@ -348,7 +349,7 @@ class Admin(commands.Cog):
 
     @commands.command(hidden=True)
     @commands.is_owner()
-    async def guildlist(self, ctx):
+    async def guildlist(self, ctx: Context):
         """Returns list of guilds bot is in"""
         
         bguilds = ""
@@ -361,10 +362,12 @@ class Admin(commands.Cog):
             colour=Colour.blurple(),
             description=f"""
                 **Guilds Bot is in**
-                Guilds: {str(bguilds)}
+                Guilds: 
+                {str(bguilds)}
             """
         )
-        
+        embed.set_footer(text=ctx.me.name + " is in " + str(len(self.bot.guilds)) + " guilds")
+
         await ctx.send(embed=embed)
 
     @commands.command(hidden=True)

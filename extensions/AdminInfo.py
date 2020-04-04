@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import CategoryChannel, Colour, Embed, Guild, Member, Role, TextChannel, User, VoiceChannel, utils
 from discord.ext.commands import Bot, BucketType, Cog, Context, command, group
+from datetime import datetime
 
 
 class AdminInfo(commands.Cog):
@@ -10,25 +11,19 @@ class AdminInfo(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
        
-    @commands.command(name='invitations')
+    @commands.command(name='invitelist')
     @commands.has_permissions(view_audit_log=True)
     async def invite_list(self, ctx: Context) -> None:
-        """Retrieves a list of active invites"""
-        invit = ""
-        invitations = await ctx.guild.invites()
-        for invite in invitations:
-            temp = "Max Age: " + str(invite["max_age"]) + "Code: " + str(invite["code"]) + "Guild: " + str(invite["guild"])
-            invit += temp+ "\n"
-            invitelist.append(invit)
-            
-        embed.discord.Embed(title="Invites", colour=Colour.blurple())
-            
-        for i in range(len(invitelist)):
-            embed.add_field(name="Invite", value=invitelist[i])
-    
-        ctx.send(embed=embed)
+        """Retrieves a list of invites"""        
+        invites = sorted(await ctx.guild.invites(), key=lambda invite: invite.created_at)
+        
+        invite_string = ""
+        for invite in invites:
+            invite_string += f"Url: {invite.url} - Inviter: {invite.inviter} - Uses: {invite.uses} - Max Uses: {invite.max_uses} - Temporary: {invite.temporary}"
        
-       
+        embed = discord.Embed(title="Invites", colour=Colour.blurple(), description=f"""{invite_string}""")
+
+        await ctx.send(embed=embed)
        
     @commands.command(name='auditlog')
     @commands.has_permissions(view_audit_log=True)
@@ -59,26 +54,16 @@ class AdminInfo(commands.Cog):
         embed.set_footer(text=str(len(banlist)) + " Banned Users", icon_url="")
         
         await ctx.send(embed=embed)
-        
-    
-    
-    @commands.command(name='invites', aliases=['inv'])
-    @commands.is_owner()
-    @commands.has_permissions(manage_guild=True, administrator=True)
-    async def invites(self, ctx: Context) -> None:
-        """Retrieves a list of invites as raw output"""
-        invitelist = await ctx.guild.invites()
-        
-        embed = Embed(
-            colour=Colour.blurple(),
-            description=f"""
-                **Invites**
-                {invitelist}
-            """
-        )
-        
-        await ctx.send(embed=embed)    
-        
+
+    @commands.command(name="msghist")
+    @commands.has_permissions(manage_messages=True)
+    async def msg_history(self, ctx, *, channel: discord.TextChannel):
+        """Retrieves Message History"""
+        messages = await channel.history(limit=123).flatten()
+
+        f = open("logs/message/"+datetime.now().strftime('%Y-%m-%d')+".json", "x+")
+        f.write(str(messages))
+        f.close()        
 
 def setup(bot):
     bot.add_cog(AdminInfo(bot))
